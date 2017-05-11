@@ -41,7 +41,7 @@ anno_rgb[anno_rgb>=5] = 1
 anno_rgb += 1
 #anno_lbl = anno_rgb[:,:,0] + (anno_rgb[:,:,1] << 8) + (anno_rgb[:,:,2] << 16)
 anno_lbl = anno_rgb
-ipdb.set_trace()
+#ipdb.set_trace()
 # Convert the 32bit integer color to 1, 2, ... labels.
 # Note that all-black, i.e. the value 0 for background will stay 0.
 colors, labels = np.unique(anno_lbl, return_inverse=True)
@@ -64,8 +64,8 @@ print(n_labels, " labels", (" plus \"unknown\" 0: " if HAS_UNK else ""), set(lab
 ###########################
 ### Setup the CRF model ###
 ###########################
-#use_2d = False
-use_2d = True
+use_2d = False
+#use_2d = True
 if use_2d:
     print("Using 2D specialized functions")
 
@@ -76,12 +76,22 @@ if use_2d:
     U = unary_from_labels(labels, n_labels, gt_prob=0.7, zero_unsure=HAS_UNK)
     d.setUnaryEnergy(U)
 
+    ## This adds the color-independent term, features are the locations only.
+    #d.addPairwiseGaussian(sxy=(3, 3), compat=3, kernel=dcrf.DIAG_KERNEL,
+                          #normalization=dcrf.NORMALIZE_SYMMETRIC)
+
+    ## This adds the color-dependent term, i.e. features are (x,y,r,g,b).
+    #d.addPairwiseBilateral(sxy=(80, 80), srgb=(13, 13, 13), rgbim=img,
+                           #compat=10,
+                           #kernel=dcrf.DIAG_KERNEL,
+                           #normalization=dcrf.NORMALIZE_SYMMETRIC)
+
     # This adds the color-independent term, features are the locations only.
-    d.addPairwiseGaussian(sxy=(3, 3), compat=3, kernel=dcrf.DIAG_KERNEL,
+    d.addPairwiseGaussian(sxy=(10, 10), compat=3, kernel=dcrf.DIAG_KERNEL,
                           normalization=dcrf.NORMALIZE_SYMMETRIC)
 
     # This adds the color-dependent term, i.e. features are (x,y,r,g,b).
-    d.addPairwiseBilateral(sxy=(80, 80), srgb=(13, 13, 13), rgbim=img,
+    d.addPairwiseBilateral(sxy=(50, 50), srgb=(20, 20, 20), rgbim=img,
                            compat=10,
                            kernel=dcrf.DIAG_KERNEL,
                            normalization=dcrf.NORMALIZE_SYMMETRIC)
@@ -121,7 +131,7 @@ MAP = np.argmax(Q, axis=0)
 
 # Convert the MAP (labels) back to the corresponding colors and save the image.
 # Note that there is no "unknown" here anymore, no matter what we had at first.
-ipdb.set_trace()
+#ipdb.set_trace()
 imwrite(fn_output, MAP.reshape(img.shape[0], img.shape[1]))
 
 # Just randomly manually run inference iterations
